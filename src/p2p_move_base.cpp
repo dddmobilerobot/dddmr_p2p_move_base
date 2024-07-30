@@ -563,7 +563,7 @@ bool P2PMoveBase::executeCycle(const std::shared_ptr<rclcpp_action::ServerGoalHa
       if((clock_->now()-FSM_->waiting_time_).seconds() >= FSM_->waiting_patience_){ 
        	FSM_->last_valid_plan_ = clock_->now();
         FSM_->setDecision("d_planning");
-        RCLCPP_WARN(this->get_logger(), "waiting time over 10,change to d_planning");
+        RCLCPP_WARN(this->get_logger(), "waiting time over %.2f,change to d_planning", FSM_->waiting_patience_);
         return false;
       }
 
@@ -596,15 +596,17 @@ bool P2PMoveBase::executeCycle(const std::shared_ptr<rclcpp_action::ServerGoalHa
       }
 
       else if(PS == dddmr_sys_core::PlannerState::ALL_TRAJECTORIES_FAIL){
+        //At least implement last_valid_control_ timeout to abort here
+        //@ this assignment will allow at least one time planning query
         if((clock_->now() - FSM_->last_valid_control_).seconds() > FSM_->controller_patience_){
           RCLCPP_WARN(this->get_logger(), "Controller time out, go to recovery");
-          FSM_->setDecision("d_recovery_controlling");
+          startRecoveryBehaviors();
+          FSM_->setDecision("d_recovery_waitdone");
         }
         else{
           FSM_->last_valid_plan_ = clock_->now();
           FSM_->setDecision("d_planning");  
         }
-        return false;
       }
 
       else if(PS == dddmr_sys_core::PlannerState::PATH_BLOCKED_WAIT || PS == dddmr_sys_core::PlannerState::PATH_BLOCKED_REPLANNING){
