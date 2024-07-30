@@ -77,10 +77,6 @@ void P2PMoveBase::initial(const std::shared_ptr<local_planner::Local_Planner>& l
   
   FSM_ = std::make_shared<p2p_move_base::FSM>(this->get_node_logging_interface(), this->get_node_parameters_interface());
 
-  declare_parameter("controller_frequency", rclcpp::ParameterValue(20.0));
-  this->get_parameter("controller_frequency", controller_frequency_);
-  RCLCPP_INFO(this->get_logger(), "controller_frequency: %.2f", controller_frequency_);
-
   cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
 
   tf_listener_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -97,7 +93,7 @@ void P2PMoveBase::initial(const std::shared_ptr<local_planner::Local_Planner>& l
   global_planner_client_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
   global_planner_client_ptr_ = rclcpp_action::create_client<dddmr_sys_core::action::GetPlan>(
       this,
-      "get_plan", global_planner_client_group_);
+      FSM_->global_planner_action_name_, global_planner_client_group_);
   
   recovery_behaviors_client_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
   recovery_behaviors_client_ptr_ = rclcpp_action::create_client<dddmr_sys_core::action::RecoveryBehaviors>(
@@ -177,7 +173,7 @@ void P2PMoveBase::executeCb(const std::shared_ptr<rclcpp_action::ServerGoalHandl
     return;
   }
 
-  rclcpp::Rate r(controller_frequency_);
+  rclcpp::Rate r(FSM_->controller_frequency_);
 
   //@ if we dont initialize oscillation pose here, the first controlling entry will cause recovery behavior.
   //@ the ros::Time initial are all done in FSM class
@@ -228,8 +224,8 @@ void P2PMoveBase::executeCb(const std::shared_ptr<rclcpp_action::ServerGoalHandl
 
     r.sleep();
 
-    //if(FSM_->isCurrentDecision("d_controlling") && r.cycleTime() > ros::Duration(1 / controller_frequency_))
-    //  ROS_WARN("Control loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", controller_frequency_, r.cycleTime().toSec());
+    //if(FSM_->isCurrentDecision("d_controlling") && r.cycleTime() > ros::Duration(1 / FSM_->controller_frequency_))
+    //  ROS_WARN("Control loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", FSM_->controller_frequency_, r.cycleTime().toSec());
   }
 }
 

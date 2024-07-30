@@ -63,7 +63,6 @@ FSM::FSM(const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr& m_logge
   oscillation_angle_ = oscillation_angle.as_double();
   RCLCPP_INFO(logger_->get_logger(), "oscillation_angle: %.2f", oscillation_angle_);  
 
-
   parameter_->declare_parameter("oscillation_patience", rclcpp::ParameterValue(20.0));
   rclcpp::Parameter oscillation_patience = parameter_->get_parameter("oscillation_patience");
   oscillation_patience_ = oscillation_patience.as_double();
@@ -83,6 +82,11 @@ FSM::FSM(const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr& m_logge
   rclcpp::Parameter waiting_patience = parameter_->get_parameter("waiting_patience");
   waiting_patience_ = waiting_patience.as_double();
   RCLCPP_INFO(logger_->get_logger(), "waiting_patience: %.2f", waiting_patience_); 
+
+  parameter_->declare_parameter("controller_frequency", rclcpp::ParameterValue(20.0));
+  rclcpp::Parameter controller_frequency = parameter_->get_parameter("controller_frequency");
+  controller_frequency_ = controller_frequency.as_double();
+  RCLCPP_INFO(logger_->get_logger(), "controller_frequency: %.2f", controller_frequency_); 
 
 }
 
