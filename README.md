@@ -1,4 +1,9 @@
 # DDDMR P2P Move Base
+
+<p align='center'>
+    <img src="https://github.com/dddmobilerobot/dddmr_documentation_materials/blob/main/p2p_move_base/bt_vs_fsm.png" width="500" height="480"/>
+</p>
+
 This repo is the finite state machine for [ddd_navigation](https://github.com/dddmobilerobot/dddmr_navigation) that can control a mobile robot to move from one pose to another pose in 3D space.
 The p2p_move_base is different from the move_base in following aspects:
 - The robot will rotate in place to the rough heading and then move out, which is similar to [Nav2_Rotation_Shim_Controller](https://github.com/ros-navigation/navigation2/tree/main/nav2_rotation_shim_controller)
