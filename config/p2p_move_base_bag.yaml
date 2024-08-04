@@ -269,11 +269,13 @@ perception_3d_local:
     plugins: ["map", "path_blocked_strategy", "lidar"]
     map:
       plugin: "perception_3d::StaticLayer"
+      is_local_planner: true
     path_blocked_strategy:
       plugin: "perception_3d::PathBlockedStrategy"
       check_radius: 0.3
     lidar:
       plugin: "perception_3d::MultiLayerSpinningLidar"
+      is_local_planner: true
       topic: "segmented_cloud_pure"
       pub_gbl_marking_for_visualization: false
       vertical_FOV_top: 15.0
@@ -287,7 +289,6 @@ perception_3d_local:
       marking_height: 1.0
       perception_window_size: 3.0 #the window for marking/clearing in meter, we dont casting to maximum range of the sensor even it is gbl map
       segmentation_ignore_ratio: 0.5 #f a segmentation match static pc with this ratio, we ignore it. ex: a wall
-      is_local_planner: true
       expected_sensor_time: 0.2
 
 perception_3d_global:
@@ -300,10 +301,20 @@ perception_3d_global:
     inflation_radius: 1.5
     sensors_collected_frequency: 10.0
     plugins: ["map", "lidar"]
+    dgraph_publish_frequency: 1.0
     map:
       plugin: "perception_3d::StaticLayer"
+      is_local_planner: false
+      use_adaptive_connection: false #If true: the neighbors of node is sparse, it will automatically increase search radius.
+      adaptive_connection_number: 20
+      radius_of_ground_connection: 1.5 #If use_adaptive_connection=false, the radius search of the node is applied.
+      hollow_hole_tolerance: 16 #If there are small holes in the ground, and you want to ignore them, increase this value 
+      intensity_search_radius: 1.0 #this value is suggested to be 1.0 meters, because if it is too large, the narrow passage will be miscalculated
+      intensity_search_punish_weight: 0.1 #the weight for a node. Set this value higher means we dont like path planning cross a orphan node.
+      static_imposing_radius: 1.0
     lidar:
       plugin: "perception_3d::MultiLayerSpinningLidar"
+      is_local_planner: false
       topic: "segmented_cloud_pure"
       pub_gbl_marking_for_visualization: true
       vertical_FOV_top: 15.0
@@ -320,14 +331,8 @@ perception_3d_global:
       marking_height: 1.0
       perception_window_size: 5.0 #the window for marking/clearing in meter, we dont casting to maximum range of the sensor even it is gbl map
       segmentation_ignore_ratio: 0.5 #f a segmentation match static pc with this ratio, we ignore it. ex: a wall
-      is_local_planner: false
       expected_sensor_time: 0.1
 
 global_planner:
   ros__parameters:
-    use_static_layer_in_perception_3d: true #If false: subscribe to ground point cloud topic. if true: use perception_3d static layer
-    use_adaptive_connection: false #If true: the neighbors of node is sparse, it will automatically increase search radius.
-    adaptive_connection_number: 20
-    radius_of_ground_connection: 1.5 #If use_adaptive_connection=false, the radius search of the node is applied.
-    boundary_reject_threshold: 1 #if connection number of a node is lower than this value, we consider this node as boundary, make the robot less prefer, noted that this value is related to the resolution of ground
     turning_weight: 0.1 #Punish the zig-zag path

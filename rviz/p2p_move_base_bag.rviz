@@ -102,7 +102,7 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
-    - Alpha: 0.20000000298023224
+    - Alpha: 0.5
       Autocompute Intensity Bounds: false
       Autocompute Value Bounds:
         Max Value: 10
@@ -281,9 +281,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 0.11281070858240128
+      Max Intensity: 0.30320701003074646
       Min Color: 0; 0; 0
-      Min Intensity: 0.0028680688701570034
+      Min Intensity: 0.004373177886009216
       Name: mcl_euc_cluster
       Position Transformer: XYZ
       Selectable: true
@@ -397,10 +397,10 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 1
+      Max Intensity: 5
       Min Color: 0; 0; 0
       Min Intensity: 0
-      Name: dGraph
+      Name: dGraph(All)
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
@@ -412,7 +412,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /multilayer_spinning_lidar/dGraph
+        Value: /perception_3d_ros/dGraph
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
@@ -431,7 +431,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 2900
+      Max Intensity: 3200
       Min Color: 0; 0; 0
       Min Intensity: 100
       Name: GlobalMarking
@@ -451,17 +451,17 @@ Visualization Manager:
       Use rainbow: true
       Value: true
     - Class: rviz_default_plugins/MarkerArray
-      Enabled: false
-      Name: MarkerArray
+      Enabled: true
+      Name: ClearingTracing
       Namespaces:
-        {}
+        edges: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /tracing_objects
-      Value: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -508,25 +508,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/XYOrbit
-      Distance: 19.879716873168945
+      Distance: 28.6353759765625
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.41634202003479
-        Y: -5.278517246246338
-        Z: -4.50948618890834e-06
+        X: -0.2255840301513672
+        Y: -7.22921085357666
+        Z: 1.4463525076280348e-05
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.0697966814041138
+      Pitch: 1.2947964668273926
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz_default_plugins)
-      Yaw: 4.045372009277344
+      Yaw: 4.050373077392578
     Saved: ~
 Window Geometry:
   Displays:
