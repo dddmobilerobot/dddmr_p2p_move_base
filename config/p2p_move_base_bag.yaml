@@ -265,7 +265,7 @@ perception_3d_local:
     inscribed_radius: 0.5
     inflation_descending_rate: 2.0
     inflation_radius: 1.5
-    sensors_collected_frequency: 5.0
+    sensors_collected_frequency: 10.0
     plugins: ["map", "path_blocked_strategy", "lidar"]
     map:
       plugin: "perception_3d::StaticLayer"
@@ -325,8 +325,7 @@ perception_3d_global:
       scan_effective_negative_end: -180.0
       euclidean_cluster_extraction_tolerance: 0.3
       euclidean_cluster_extraction_min_cluster_size: 1
-      euclidean_cluster_extraction_max_cluster_size: 100
-      resolution: 0.05
+      xy_resolution: 0.05
       height_resolution: 0.2
       marking_height: 1.0
       perception_window_size: 5.0 #the window for marking/clearing in meter, we dont casting to maximum range of the sensor even it is gbl map
