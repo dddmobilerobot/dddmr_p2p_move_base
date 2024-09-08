@@ -285,8 +285,8 @@ perception_3d_local:
       scan_effective_negative_start: -30.0
       scan_effective_negative_end: -180.0
       resolution: 0.05
-      height_resolution: 0.2
-      marking_height: 1.0
+      height_resolution: 0.05
+      marking_height: 2.0
       perception_window_size: 3.0 #the window for marking/clearing in meter, we dont casting to maximum range of the sensor even it is gbl map
       segmentation_ignore_ratio: 0.5 #f a segmentation match static pc with this ratio, we ignore it. ex: a wall
       expected_sensor_time: 0.2
@@ -323,13 +323,13 @@ perception_3d_global:
       scan_effective_positive_end: 180.0
       scan_effective_negative_start: -30.0
       scan_effective_negative_end: -180.0
-      euclidean_cluster_extraction_tolerance: 0.3
+      euclidean_cluster_extraction_tolerance: 0.1
       euclidean_cluster_extraction_min_cluster_size: 1
       xy_resolution: 0.05
-      height_resolution: 0.2
-      marking_height: 1.0
+      height_resolution: 0.05
+      marking_height: 2.0
       perception_window_size: 5.0 #the window for marking/clearing in meter, we dont casting to maximum range of the sensor even it is gbl map
-      segmentation_ignore_ratio: 0.5 #f a segmentation match static pc with this ratio, we ignore it. ex: a wall
+      segmentation_ignore_ratio: 1.1 #f a segmentation match static pc with this ratio, we ignore it. ex: a wall
       expected_sensor_time: 0.1
 
 global_planner:
