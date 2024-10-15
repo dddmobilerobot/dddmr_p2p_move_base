@@ -88,6 +88,16 @@ FSM::FSM(const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr& m_logge
   controller_frequency_ = controller_frequency.as_double();
   RCLCPP_INFO(logger_->get_logger(), "controller_frequency: %.2f", controller_frequency_); 
 
+  parameter_->declare_parameter("use_twist_stamped", rclcpp::ParameterValue(false));
+  rclcpp::Parameter use_twist_stamped = parameter_->get_parameter("use_twist_stamped");
+  use_twist_stamped_ = use_twist_stamped.as_bool();
+  RCLCPP_INFO(logger_->get_logger(), "use_stamped_twist: %d", use_twist_stamped_); 
+
+  parameter_->declare_parameter("twist_frame_id", rclcpp::ParameterValue("base_link"));
+  rclcpp::Parameter twist_frame_id = parameter_->get_parameter("twist_frame_id");
+  twist_frame_id_ = twist_frame_id.as_string();
+  RCLCPP_INFO(logger_->get_logger(), "twist_frame_id: %s", twist_frame_id_.c_str()); 
+
 }
 
 bool FSM::isCurrentDecision(std::string m_decision){

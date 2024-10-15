@@ -76,8 +76,14 @@ void P2PMoveBase::initial(const std::shared_ptr<local_planner::Local_Planner>& l
   LP_ = lp;
   
   FSM_ = std::make_shared<p2p_move_base::FSM>(this->get_node_logging_interface(), this->get_node_parameters_interface());
-
-  cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
+  
+  if(FSM_->use_twist_stamped_){
+    stamped_cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>("cmd_vel_stamped", 1);
+  }
+  else{
+    cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
+  }
+  
 
   tf_listener_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
   action_server_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -151,15 +157,38 @@ bool P2PMoveBase::isQuaternionValid(const geometry_msgs::msg::Quaternion& q){
 }
 
 void P2PMoveBase::publishZeroVelocity(){
-  //@ TODO, if speed is not zero, do down speed
   geometry_msgs::msg::Twist cmd_vel;
   cmd_vel.linear.x = 0.0;
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.0;
-  cmd_vel_pub_->publish(cmd_vel);
+  if(FSM_->use_twist_stamped_){
+    geometry_msgs::msg::TwistStamped stamped_cmd_vel;
+    stamped_cmd_vel.header.frame_id = FSM_->twist_frame_id_;
+    stamped_cmd_vel.header.stamp = clock_->now();
+    stamped_cmd_vel.twist = cmd_vel;
+    stamped_cmd_vel_pub_->publish(stamped_cmd_vel);
+  }
+  else{
+    cmd_vel_pub_->publish(cmd_vel);
+  }
 }
 
-
+void P2PMoveBase::publishVelocity(double vx, double vy, double angular_z){
+  geometry_msgs::msg::Twist cmd_vel;
+  cmd_vel.linear.x = vx;
+  cmd_vel.linear.y = vy;
+  cmd_vel.angular.z = angular_z;
+  if(FSM_->use_twist_stamped_){
+    geometry_msgs::msg::TwistStamped stamped_cmd_vel;
+    stamped_cmd_vel.header.frame_id = FSM_->twist_frame_id_;
+    stamped_cmd_vel.header.stamp = clock_->now();
+    stamped_cmd_vel.twist = cmd_vel;
+    stamped_cmd_vel_pub_->publish(stamped_cmd_vel);
+  }
+  else{
+    cmd_vel_pub_->publish(cmd_vel);
+  }
+}
 
 void P2PMoveBase::executeCb(const std::shared_ptr<rclcpp_action::ServerGoalHandle<dddmr_sys_core::action::PToPMoveBase>> goal_handle)
 {
@@ -305,11 +334,7 @@ bool P2PMoveBase::executeCycle(const std::shared_ptr<rclcpp_action::ServerGoalHa
         if(PS == dddmr_sys_core::PlannerState::TRAJECTORY_FOUND){
           FSM_->last_valid_control_ = clock_->now();
           FSM_->setDecision("d_align_heading");  
-          //publish cmd_vel
-          geometry_msgs::msg::Twist cmd_vel;
-          cmd_vel.linear.x = best_traj.xv_;
-          cmd_vel.angular.z = best_traj.thetav_;
-          cmd_vel_pub_->publish(cmd_vel);
+          publishVelocity(best_traj.xv_, best_traj.yv_, best_traj.thetav_);
           return false;
         }
         else if(PS == dddmr_sys_core::PlannerState::PERCEPTION_MALFUNCTION){
@@ -385,11 +410,7 @@ bool P2PMoveBase::executeCycle(const std::shared_ptr<rclcpp_action::ServerGoalHa
         if(PS == dddmr_sys_core::PlannerState::TRAJECTORY_FOUND){
           FSM_->last_valid_control_ = clock_->now();
           FSM_->setDecision("d_align_goal_heading");  
-          //publish cmd_vel
-          geometry_msgs::msg::Twist cmd_vel;
-          cmd_vel.linear.x = best_traj.xv_;
-          cmd_vel.angular.z = best_traj.thetav_;
-          cmd_vel_pub_->publish(cmd_vel);
+          publishVelocity(best_traj.xv_, best_traj.yv_, best_traj.thetav_);
           return false;
         }
         else if(PS == dddmr_sys_core::PlannerState::PERCEPTION_MALFUNCTION){
@@ -460,11 +481,7 @@ bool P2PMoveBase::executeCycle(const std::shared_ptr<rclcpp_action::ServerGoalHa
       if(PS == dddmr_sys_core::PlannerState::TRAJECTORY_FOUND){
         FSM_->last_valid_control_ = clock_->now();
         FSM_->setDecision("d_controlling");  
-        //publish cmd_vel
-        geometry_msgs::msg::Twist cmd_vel;
-        cmd_vel.linear.x = best_traj.xv_;
-        cmd_vel.angular.z = best_traj.thetav_;
-        cmd_vel_pub_->publish(cmd_vel);
+        publishVelocity(best_traj.xv_, best_traj.yv_, best_traj.thetav_);
         return false;
       }
       else if(PS == dddmr_sys_core::PlannerState::PERCEPTION_MALFUNCTION){

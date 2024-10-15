@@ -84,14 +84,13 @@ class P2PMoveBase : public rclcpp::Node {
     std::shared_ptr<tf2_ros::TransformListener> tfl_;
     std::shared_ptr<tf2_ros::Buffer> tf2Buffer_;  ///< @brief Used for transforming point clouds
 
-    //ros::Subscriber goal_sub_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr stamped_cmd_vel_pub_;
 
     bool isQuaternionValid(const geometry_msgs::msg::Quaternion& q);
 
     void publishZeroVelocity();
-
-    double controller_frequency_;
+    void publishVelocity(double vx, double vy, double angular_z);
 
     std::shared_ptr<p2p_move_base::FSM> FSM_;
     std::shared_ptr<local_planner::Local_Planner> LP_;

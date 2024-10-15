@@ -37,6 +37,8 @@
 #include "tf2/LinearMath/Transform.h"
 #include "tf2/time.h"
 
+#include <geometry_msgs/msg/twist.hpp>
+#include <geometry_msgs/msg/twist_stamped.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 /*For tf2::matrix3x3 as quaternion to euler*/
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -85,6 +87,8 @@ class FSM{
     double getDistance(geometry_msgs::msg::TransformStamped& a, geometry_msgs::msg::TransformStamped& b);
     double getAngle(geometry_msgs::msg::TransformStamped& a, geometry_msgs::msg::TransformStamped& b);
 
+    bool use_twist_stamped_;
+    std::string twist_frame_id_;
 
   private:
 
