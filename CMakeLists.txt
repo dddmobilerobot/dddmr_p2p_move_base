@@ -69,12 +69,24 @@ ament_target_dependencies(p2p_fsm
   ${dependencies}
 )
 
+# p2p_global_plan_manager
+add_library(p2p_global_plan_manager SHARED
+  src/p2p_global_plan_manager.cpp
+)
+target_link_libraries(p2p_global_plan_manager
+  ${PCL_LIBRARIES}
+)
+ament_target_dependencies(p2p_global_plan_manager
+  ${dependencies}
+)
+
 # p2p_mov2_base
 add_library(p2p_mov2_base SHARED
   src/p2p_move_base.cpp
 )
 target_link_libraries(p2p_mov2_base
   p2p_fsm
+  p2p_global_plan_manager
 )
 ament_target_dependencies(p2p_mov2_base
   ${dependencies}
@@ -94,6 +106,7 @@ ament_target_dependencies(p2p_move_base_node
 install(TARGETS
   p2p_fsm
   p2p_mov2_base
+  p2p_global_plan_manager
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -124,6 +137,6 @@ install(PROGRAMS
 
 
 ament_export_include_directories(include)
-ament_export_libraries(p2p_fsm p2p_mov2_base)
+ament_export_libraries(p2p_fsm p2p_mov2_base p2p_global_plan_manager)
 ament_export_dependencies(${dependencies})
 ament_package()

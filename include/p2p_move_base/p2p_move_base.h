@@ -40,6 +40,7 @@
 
 //@for call global planner action
 #include "dddmr_sys_core/action/get_plan.hpp"
+#include "p2p_move_base/p2p_global_plan_manager.h"
 //@for call recovery action
 #include "dddmr_sys_core/action/recovery_behaviors.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -55,8 +56,7 @@ class P2PMoveBase : public rclcpp::Node {
     P2PMoveBase(std::string name);
     ~P2PMoveBase();
 
-    void initial(const std::shared_ptr<local_planner::Local_Planner>& lp);
-
+    void initial(const std::shared_ptr<local_planner::Local_Planner>& lp, const std::shared_ptr<p2p_move_base::P2PGlobalPlanManager>& gpm);
   private:
 
     rclcpp_action::GoalResponse handle_goal(
@@ -74,7 +74,6 @@ class P2PMoveBase : public rclcpp::Node {
     
     rclcpp::CallbackGroup::SharedPtr tf_listener_group_;
     rclcpp::CallbackGroup::SharedPtr action_server_group_;
-    rclcpp::CallbackGroup::SharedPtr global_planner_client_group_;
     rclcpp::CallbackGroup::SharedPtr recovery_behaviors_client_group_;
 
     rclcpp::Clock::SharedPtr clock_;
@@ -94,6 +93,7 @@ class P2PMoveBase : public rclcpp::Node {
 
     std::shared_ptr<p2p_move_base::FSM> FSM_;
     std::shared_ptr<local_planner::Local_Planner> LP_;
+    std::shared_ptr<p2p_move_base::P2PGlobalPlanManager> GPM_;
 
     void executeCb(const std::shared_ptr<rclcpp_action::ServerGoalHandle<dddmr_sys_core::action::PToPMoveBase>> goal_handle);
 
@@ -104,13 +104,6 @@ class P2PMoveBase : public rclcpp::Node {
     {
       return handle != nullptr && handle->is_active();
     }
-    
-    rclcpp_action::Client<dddmr_sys_core::action::GetPlan>::SharedPtr global_planner_client_ptr_;
-    void global_planner_client_goal_response_callback(const rclcpp_action::ClientGoalHandle<dddmr_sys_core::action::GetPlan>::SharedPtr & goal_handle);
-    void global_planner_client_result_callback(const rclcpp_action::ClientGoalHandle<dddmr_sys_core::action::GetPlan>::WrappedResult & result);
-    bool is_planning_;
-    nav_msgs::msg::Path global_path_;
-    void startGlobalPlanning();
 
     rclcpp_action::Client<dddmr_sys_core::action::RecoveryBehaviors>::SharedPtr recovery_behaviors_client_ptr_;
     void recovery_behaviors_client_goal_response_callback(const rclcpp_action::ClientGoalHandle<dddmr_sys_core::action::RecoveryBehaviors>::SharedPtr & goal_handle);

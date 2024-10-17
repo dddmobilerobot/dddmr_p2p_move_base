@@ -71,10 +71,12 @@ void P2PMoveBase::handle_accepted(const std::shared_ptr<rclcpp_action::ServerGoa
   std::thread{std::bind(&P2PMoveBase::executeCb, this, std::placeholders::_1), goal_handle}.detach();
 }
 
-void P2PMoveBase::initial(const std::shared_ptr<local_planner::Local_Planner>& lp){
+void P2PMoveBase::initial(const std::shared_ptr<local_planner::Local_Planner>& lp
+                    ,const std::shared_ptr<p2p_move_base::P2PGlobalPlanManager>& gpm){
   
   LP_ = lp;
-  
+  GPM_ = gpm;
+
   FSM_ = std::make_shared<p2p_move_base::FSM>(this->get_node_logging_interface(), this->get_node_parameters_interface());
   
   if(FSM_->use_twist_stamped_){
@@ -96,11 +98,6 @@ void P2PMoveBase::initial(const std::shared_ptr<local_planner::Local_Planner>& l
   tf2Buffer_->setCreateTimerInterface(timer_interface);
   tfl_ = std::make_shared<tf2_ros::TransformListener>(*tf2Buffer_);
   
-  global_planner_client_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-  global_planner_client_ptr_ = rclcpp_action::create_client<dddmr_sys_core::action::GetPlan>(
-      this,
-      FSM_->global_planner_action_name_, global_planner_client_group_);
-  
   recovery_behaviors_client_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
   recovery_behaviors_client_ptr_ = rclcpp_action::create_client<dddmr_sys_core::action::RecoveryBehaviors>(
       this,
@@ -116,7 +113,7 @@ void P2PMoveBase::initial(const std::shared_ptr<local_planner::Local_Planner>& l
     rcl_action_server_get_default_options(),
     action_server_group_);
 
-  RCLCPP_INFO(this->get_logger(), "\033[1;32m---->\033[0m P2P move base launch.");
+  RCLCPP_INFO(this->get_logger(), "\033[1;32m---->\033[0m P2P move base launched.");
 
 }
 
@@ -124,6 +121,8 @@ P2PMoveBase::~P2PMoveBase(){
   FSM_.reset();
   tf2Buffer_.reset();
   tfl_.reset();
+  LP_.reset();
+  GPM_.reset();
 }
 
 bool P2PMoveBase::isQuaternionValid(const geometry_msgs::msg::Quaternion& q){
@@ -205,12 +204,12 @@ void P2PMoveBase::executeCb(const std::shared_ptr<rclcpp_action::ServerGoalHandl
   rclcpp::Rate r(FSM_->controller_frequency_);
 
   //@ if we dont initialize oscillation pose here, the first controlling entry will cause recovery behavior.
-  //@ the ros::Time initial are all done in FSM class
+  //@ the rclcpp::Time initial are all done in FSM class
   FSM_->initialParams(LP_->getGlobalPose(), clock_->now());
-
   FSM_->current_goal_ = move_base_goal->target_pose;
+  GPM_->setGoal(FSM_->current_goal_);
+  GPM_->resume();
 
-  
   while(rclcpp::ok()){
 
     if(!goal_handle->is_active()){
@@ -256,6 +255,7 @@ void P2PMoveBase::executeCb(const std::shared_ptr<rclcpp_action::ServerGoalHandl
     //if(FSM_->isCurrentDecision("d_controlling") && r.cycleTime() > ros::Duration(1 / FSM_->controller_frequency_))
     //  ROS_WARN("Control loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", FSM_->controller_frequency_, r.cycleTime().toSec());
   }
+  GPM_->pause();
 }
 
 bool P2PMoveBase::executeCycle(const std::shared_ptr<rclcpp_action::ServerGoalHandle<dddmr_sys_core::action::PToPMoveBase>> goal_handle){
@@ -274,7 +274,7 @@ bool P2PMoveBase::executeCycle(const std::shared_ptr<rclcpp_action::ServerGoalHa
     }
 
     else if(FSM_->isCurrentDecision("d_planning")){
-      startGlobalPlanning();
+      //startGlobalPlanning();
       FSM_->setDecision("d_planning_waitdone");
       return false;
     }
@@ -284,14 +284,11 @@ bool P2PMoveBase::executeCycle(const std::shared_ptr<rclcpp_action::ServerGoalHa
       //@If global planner keep return empty plan, we will enter this state for n seconds, then abort
       //@see: decision_planning
       std::vector<geometry_msgs::msg::PoseStamped> plan;
-      if(!is_planning_){
-        for(int i=0;i<global_path_.poses.size();i++){
-          plan.push_back(global_path_.poses[i]);
-        }
-
+      if(GPM_->hasPlan()){
+        GPM_->copyPlan(plan);
         //if the planner fails or returns a zero length plan, planning failed
         if(plan.empty()){
-          RCLCPP_DEBUG(this->get_logger(), "Failed to find a  plan to point (%.2f, %.2f, %.2f)", 
+          RCLCPP_DEBUG(this->get_logger(), "Failed to find a plan to point (%.2f, %.2f, %.2f)", 
               FSM_->current_goal_.pose.position.x, FSM_->current_goal_.pose.position.y, FSM_->current_goal_.pose.position.z);
           FSM_->setDecision("d_planning");
         }
@@ -463,7 +460,12 @@ bool P2PMoveBase::executeCycle(const std::shared_ptr<rclcpp_action::ServerGoalHa
         FSM_->setDecision("d_align_goal_heading");  
         return false;
       }
-
+      
+      //@ update global plan
+      std::vector<geometry_msgs::msg::PoseStamped> plan;
+      GPM_->copyPlan(plan);
+      LP_->setPlan(plan);
+      
       //@Behavior for oscillation here
       
       if(FSM_->oscillation_patience_ >0 && (clock_->now()-FSM_->last_oscillation_reset_).seconds() >= FSM_->oscillation_patience_){
@@ -641,52 +643,6 @@ bool P2PMoveBase::executeCycle(const std::shared_ptr<rclcpp_action::ServerGoalHa
     }
 
   return false;
-}
-
-void P2PMoveBase::global_planner_client_goal_response_callback(const rclcpp_action::ClientGoalHandle<dddmr_sys_core::action::GetPlan>::SharedPtr & goal_handle)
-{
-  if (!goal_handle) {
-    RCLCPP_ERROR(this->get_logger(), "Goal was rejected by global planner server");
-  } else {
-    RCLCPP_INFO(this->get_logger(), "Goal accepted by global planner server, waiting for result");
-  }
-}
-
-void P2PMoveBase::startGlobalPlanning(){
-
-  auto goal_msg = dddmr_sys_core::action::GetPlan::Goal();
-  goal_msg.goal = FSM_->current_goal_;
-
-  auto send_goal_options = rclcpp_action::Client<dddmr_sys_core::action::GetPlan>::SendGoalOptions();
-  
-  send_goal_options.goal_response_callback =
-    std::bind(&P2PMoveBase::global_planner_client_goal_response_callback, this, std::placeholders::_1);
-  send_goal_options.result_callback =
-    std::bind(&P2PMoveBase::global_planner_client_result_callback, this, std::placeholders::_1);
-  
-  is_planning_ = true;
-  global_path_.poses.clear();
-  global_planner_client_ptr_->async_send_goal(goal_msg, send_goal_options);
-  
-}
-
-void P2PMoveBase::global_planner_client_result_callback(const rclcpp_action::ClientGoalHandle<dddmr_sys_core::action::GetPlan>::WrappedResult & result)
-{
-  switch (result.code) {
-    case rclcpp_action::ResultCode::SUCCEEDED:
-      break;
-    case rclcpp_action::ResultCode::ABORTED:
-      RCLCPP_ERROR(this->get_logger(), "Global Planner: Goal was aborted");
-      break;
-    case rclcpp_action::ResultCode::CANCELED:
-      RCLCPP_ERROR(this->get_logger(), "Global Planner: Goal was canceled");
-      break;
-    default:
-      RCLCPP_ERROR(this->get_logger(), "Global Planner: Unknown result code");
-      break;
-  }
-  global_path_ = result.result->path;
-  is_planning_ = false;
 }
 
 void P2PMoveBase::startRecoveryBehaviors(){
