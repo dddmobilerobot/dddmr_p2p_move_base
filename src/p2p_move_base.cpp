@@ -586,6 +586,11 @@ bool P2PMoveBase::executeCycle(const std::shared_ptr<rclcpp_action::ServerGoalHa
         return false;
       }
 
+      //@ update global plan
+      std::vector<geometry_msgs::msg::PoseStamped> plan;
+      GPM_->copyPlan(plan);
+      LP_->setPlan(plan);
+      
       base_trajectory::Trajectory best_traj;
       dddmr_sys_core::PlannerState PS = LP_->computeVelocityCommand("differential_drive_simple", best_traj);
 
