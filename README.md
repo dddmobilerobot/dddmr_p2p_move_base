@@ -35,7 +35,7 @@ ros2 launch p2p_move_base p2p_move_base_bag.launch
 #### Play bag file in the container
 We need another terminal to play the bag file. Open another terminal and run following command to get into the container:
 ```
-docker exec -it dddmr_ros2_dev bash
+docker exec -it dddmr_humble_dev bash
 ```
 Once you are in the container, run:
 ```
