@@ -31,7 +31,7 @@
 #include <p2p_move_base/p2p_global_plan_manager.h>
 namespace p2p_move_base
 {
-P2PGlobalPlanManager::P2PGlobalPlanManager(std::string name) : Node(name), name_(name), is_paused_(true){
+P2PGlobalPlanManager::P2PGlobalPlanManager(std::string name) : Node(name), name_(name), got_first_goal_(false){
   clock_ = this->get_clock();
 }
 
@@ -68,20 +68,30 @@ void P2PGlobalPlanManager::initial(){
   timer_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
   auto loop_time = std::chrono::milliseconds(int(1000/global_plan_query_frequency_));
   loop_timer_ = this->create_wall_timer(loop_time, std::bind(&P2PGlobalPlanManager::queryThread, this), timer_group_);
-
+  stop();
 }
 
-void P2PGlobalPlanManager::resume(){is_paused_ = false;is_planning_ = false; global_path_.poses.clear();}
-void P2PGlobalPlanManager::pause(){is_paused_ = true;}
+void P2PGlobalPlanManager::resume(){
+  global_path_.poses.clear();
+  is_planning_ = false;
+  loop_timer_->reset();
+  RCLCPP_INFO(this->get_logger(), "Global plan manager is resumed");
+}
+
+void P2PGlobalPlanManager::stop(){
+  loop_timer_->cancel();
+  got_first_goal_ = false;
+  RCLCPP_INFO(this->get_logger(), "Global plan manager is stopped");
+}
 
 void P2PGlobalPlanManager::queryThread(){
-
-  if(is_paused_)
-    return;
 
   std::unique_lock<std::mutex> lock(access_);
   
   if(is_planning_)
+    return;
+  
+  if(!got_first_goal_)
     return;
 
   auto goal_msg = dddmr_sys_core::action::GetPlan::Goal();
@@ -130,6 +140,7 @@ void P2PGlobalPlanManager::global_planner_client_result_callback(const rclcpp_ac
 void P2PGlobalPlanManager::setGoal(const geometry_msgs::msg::PoseStamped& goal){
   std::unique_lock<std::mutex> lock(access_);
   goal_ = goal;
+  got_first_goal_ = true;
 }
 
 bool P2PGlobalPlanManager::hasPlan(){

@@ -1,6 +1,5 @@
 p2p_move_base:
   ros__parameters:
-    global_planner_action_name: "get_plan"
     controller_frequency: 10.0
     planner_patience: 10.0
     oscillation_distance: 5.0
@@ -9,13 +8,17 @@ p2p_move_base:
     controller_patience: 10.0
     no_plan_retry_num: 10
     waiting_patience: 10.0
+global_plan_manager:
+  ros__parameters:
+    global_planner_action_name: "get_plan"
+    global_plan_query_frequency: 1.0
 
 mcl_ip:
   ros__parameters:
     # leishen16
     laser:
         num_vertical_scans: 16
-        num_horizontal_scans: 2000
+        num_horizontal_scans: 1000
         ground_scan_index: 7
         vertical_angle_bottom: -15.0          # degrees
         vertical_angle_top: 15.0            # degrees
@@ -32,11 +35,7 @@ mcl_fa:
   ros__parameters:
     laser:
         num_vertical_scans: 16
-        num_horizontal_scans: 2000
-        ground_scan_index: 7
-        vertical_angle_bottom: -15.0          # degrees
-        vertical_angle_top: 15.0            # degrees
-        sensor_mount_angle: 0.0               # degrees
+        num_horizontal_scans: 1000
         scan_period: 0.1                    # seconds
 
     featureAssociation:
@@ -55,7 +54,7 @@ mcl_fa:
         
 sub_maps:
   ros__parameters:
-    pose_graph_dir: "/root/dddmr_bags/benanli_detention_basin_pg"
+    pose_graph_dir: "/root/dddmr_bags/meydan_hotel_pg"
     sub_map_search_radius: 50.0
     sub_map_warmup_trigger_distance: 20.0
     complete_map_voxel_size: 0.4
@@ -66,7 +65,7 @@ mcl_3dl:
     init_z: 0.0
     init_roll: 0.0
     init_pitch: 0.0
-    init_yaw: 1.57
+    init_yaw: 0.0
     init_var_x: 2.0
     init_var_y: 2.0
     init_var_z: 0.5
@@ -307,11 +306,11 @@ perception_3d_global:
       is_local_planner: false
       use_adaptive_connection: false #If true: the neighbors of node is sparse, it will automatically increase search radius.
       adaptive_connection_number: 20
-      radius_of_ground_connection: 1.5 #If use_adaptive_connection=false, the radius search of the node is applied.
-      hollow_hole_tolerance: 16 #If there are small holes in the ground, and you want to ignore them, increase this value 
+      radius_of_ground_connection: 1.0 #If use_adaptive_connection=false, the radius search of the node is applied.
+      hollow_hole_tolerance: 10 #If there are small holes in the ground, and you want to ignore them, increase this value 
       intensity_search_radius: 1.0 #this value is suggested to be 1.0 meters, because if it is too large, the narrow passage will be miscalculated
       intensity_search_punish_weight: 0.1 #the weight for a node. Set this value higher means we dont like path planning cross a orphan node.
-      static_imposing_radius: 1.0
+      static_imposing_radius: 2.0 #use map to add weight on each ground node
     lidar:
       plugin: "perception_3d::MultiLayerSpinningLidar"
       is_local_planner: false

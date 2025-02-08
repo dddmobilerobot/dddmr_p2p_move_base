@@ -221,6 +221,7 @@ void P2PMoveBase::executeCb(const std::shared_ptr<rclcpp_action::ServerGoalHandl
 
       RCLCPP_INFO(this->get_logger(), "P2P move base preempted.");
       publishZeroVelocity();
+      GPM_->stop();
       return;
     }
 
@@ -234,6 +235,7 @@ void P2PMoveBase::executeCb(const std::shared_ptr<rclcpp_action::ServerGoalHandl
       goal_handle->canceled(result);
       RCLCPP_INFO(this->get_logger(), "P2P move base cancelled.");
       publishZeroVelocity();
+      GPM_->stop();
       return;
     }
 
@@ -247,15 +249,17 @@ void P2PMoveBase::executeCb(const std::shared_ptr<rclcpp_action::ServerGoalHandl
     goal_handle->publish_feedback(feedback);
 
     //if we're done, then we'll return from execute
-    if(done)
+    if(done){
+      GPM_->stop();
       return;
-
+    }
+    
     r.sleep();
 
     //if(FSM_->isCurrentDecision("d_controlling") && r.cycleTime() > ros::Duration(1 / FSM_->controller_frequency_))
     //  ROS_WARN("Control loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", FSM_->controller_frequency_, r.cycleTime().toSec());
   }
-  GPM_->pause();
+  GPM_->stop();
 }
 
 bool P2PMoveBase::executeCycle(const std::shared_ptr<rclcpp_action::ServerGoalHandle<dddmr_sys_core::action::PToPMoveBase>> goal_handle){
@@ -274,7 +278,7 @@ bool P2PMoveBase::executeCycle(const std::shared_ptr<rclcpp_action::ServerGoalHa
     }
 
     else if(FSM_->isCurrentDecision("d_planning")){
-      //startGlobalPlanning();
+      GPM_->queryThread();
       FSM_->setDecision("d_planning_waitdone");
       return false;
     }
@@ -316,7 +320,7 @@ bool P2PMoveBase::executeCycle(const std::shared_ptr<rclcpp_action::ServerGoalHa
       }
       else{
 
-        if(FSM_->oscillation_patience_ >0 && (clock_->now()-FSM_->last_oscillation_reset_).seconds() >= FSM_->oscillation_patience_){
+        if(FSM_->oscillation_patience_ > 0 && (clock_->now()-FSM_->last_oscillation_reset_).seconds() >= FSM_->oscillation_patience_){
           //@go to recovery
           auto diff = (clock_->now()-FSM_->last_oscillation_reset_).seconds();
           RCLCPP_WARN(this->get_logger(), "Oscillation time out is detected: %.2f secs for %.2f m.", diff, FSM_->getDistance(FSM_->global_pose_, FSM_->oscillation_pose_));
@@ -462,10 +466,11 @@ bool P2PMoveBase::executeCycle(const std::shared_ptr<rclcpp_action::ServerGoalHa
       }
       
       //@ update global plan
-      std::vector<geometry_msgs::msg::PoseStamped> plan;
-      GPM_->copyPlan(plan);
-      LP_->setPlan(plan);
-      
+      if(GPM_->hasPlan()){
+        std::vector<geometry_msgs::msg::PoseStamped> plan;
+        GPM_->copyPlan(plan);
+        LP_->setPlan(plan);
+      }
       //@Behavior for oscillation here
       
       if(FSM_->oscillation_patience_ >0 && (clock_->now()-FSM_->last_oscillation_reset_).seconds() >= FSM_->oscillation_patience_){
@@ -587,10 +592,11 @@ bool P2PMoveBase::executeCycle(const std::shared_ptr<rclcpp_action::ServerGoalHa
       }
 
       //@ update global plan
-      std::vector<geometry_msgs::msg::PoseStamped> plan;
-      GPM_->copyPlan(plan);
-      LP_->setPlan(plan);
-      
+      if(GPM_->hasPlan()){
+        std::vector<geometry_msgs::msg::PoseStamped> plan;
+        GPM_->copyPlan(plan);
+        LP_->setPlan(plan);
+      }
       base_trajectory::Trajectory best_traj;
       dddmr_sys_core::PlannerState PS = LP_->computeVelocityCommand("differential_drive_simple", best_traj);
 

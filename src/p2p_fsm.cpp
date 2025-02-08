@@ -42,11 +42,6 @@ FSM::FSM(const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr& m_logge
   last_decision_ = "d_initial",
 
   //Planning related
-  parameter_->declare_parameter("global_planner_action_name", rclcpp::ParameterValue(""));
-  rclcpp::Parameter global_planner_action_name = parameter_->get_parameter("global_planner_action_name");
-  global_planner_action_name_ = global_planner_action_name.as_string();
-  RCLCPP_INFO(logger_->get_logger().get_child("p2p_fsm"), "Move base uses \033[1;32m%s\033[0m service to query global plan.", global_planner_action_name_.c_str());
-
   parameter_->declare_parameter("planner_patience", rclcpp::ParameterValue(10.0));
   rclcpp::Parameter planner_patience = parameter_->get_parameter("planner_patience");
   planner_patience_ = planner_patience.as_double();

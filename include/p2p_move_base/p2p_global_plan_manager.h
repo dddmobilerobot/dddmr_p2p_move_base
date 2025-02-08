@@ -67,8 +67,8 @@ private:
   std::string global_planner_action_name_;
   double global_plan_query_frequency_;
   geometry_msgs::msg::PoseStamped goal_;
-  bool is_paused_;
   bool is_planning_;
+  bool got_first_goal_;
   nav_msgs::msg::Path global_path_;
 
   rclcpp::CallbackGroup::SharedPtr tf_listener_group_;
@@ -81,18 +81,18 @@ private:
   void global_planner_client_goal_response_callback(const rclcpp_action::ClientGoalHandle<dddmr_sys_core::action::GetPlan>::SharedPtr & goal_handle);
   void global_planner_client_result_callback(const rclcpp_action::ClientGoalHandle<dddmr_sys_core::action::GetPlan>::WrappedResult & result);
   
-  void queryThread();
 
 public:
 
   P2PGlobalPlanManager(std::string name);
   ~P2PGlobalPlanManager();
   
+  void queryThread();
+
   void initial();
-  
   void setGoal(const geometry_msgs::msg::PoseStamped& goal);
   void resume();
-  void pause();
+  void stop();
   bool hasPlan();
   void copyPlan(std::vector<geometry_msgs::msg::PoseStamped>& plan);
 

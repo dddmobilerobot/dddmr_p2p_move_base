@@ -68,7 +68,6 @@ class FSM{
     geometry_msgs::msg::PoseStamped current_goal_;
     double planner_patience_;
     double controller_frequency_;
-    std::string global_planner_action_name_;
     
     /*recovery params*/
     int no_plan_recovery_count_, no_plan_retry_num_;
